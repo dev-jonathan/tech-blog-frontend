@@ -13,19 +13,24 @@ import {
   errorMessageClasses,
   helperTextClasses,
 } from '@/lib/form-styles';
+import type { Category } from '@/types/api';
 
 interface ArticleFormProps {
+  categories: Category[];
   defaultValues?: Partial<ArticleFormData>;
   onSubmit: (data: ArticleFormData) => void;
   onCancel: () => void;
   submitButtonText?: string;
+  isSubmitting?: boolean;
 }
 
 export function ArticleForm({
+  categories,
   defaultValues,
   onSubmit,
   onCancel,
   submitButtonText = 'Publicar Artigo',
+  isSubmitting = false,
 }: ArticleFormProps) {
   const {
     register,
@@ -37,9 +42,8 @@ export function ArticleForm({
     resolver: zodResolver(articleSchema),
     defaultValues: {
       title: '',
-      author: '',
       content: '',
-      tag: '',
+      categoryId: defaultValues?.categoryId,
       banner: '',
       ...defaultValues,
     },
@@ -47,7 +51,7 @@ export function ArticleForm({
 
   const watchBanner = watch('banner');
   const watchContent = watch('content');
-  const watchTag = watch('tag');
+  const watchCategoryId = watch('categoryId');
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -62,41 +66,34 @@ export function ArticleForm({
           {...register('title')}
           aria-invalid={errors.title ? 'true' : 'false'}
           className={getInputClasses(!!errors.title)}
+          disabled={isSubmitting}
         />
         {errors.title && (
           <p className={errorMessageClasses}>{errors.title.message}</p>
         )}
       </div>
 
-      {/* Author Field */}
-      <div className="space-y-2">
-        <Label htmlFor="author" className={labelClasses}>
-          Autor
-        </Label>
-        <Input
-          id="author"
-          placeholder="Nome do autor"
-          {...register('author')}
-          aria-invalid={errors.author ? 'true' : 'false'}
-          className={getInputClasses(!!errors.author)}
-        />
-        {errors.author && (
-          <p className={errorMessageClasses}>{errors.author.message}</p>
-        )}
-      </div>
-
       {/* Category Select */}
       <div className="space-y-2">
         <Label className={labelClasses}>Categoria</Label>
+        <input
+          type="hidden"
+          {...register('categoryId', { valueAsNumber: true })}
+        />
         <CategoryBadges
-          selectedCategory={watchTag || null}
-          onCategoryChange={(category) => setValue('tag', category || '')}
+          categories={categories}
+          selectedCategoryId={watchCategoryId ?? null}
+          onCategoryChange={(categoryId) =>
+            setValue('categoryId', categoryId ?? undefined, {
+              shouldValidate: true,
+            })
+          }
           allowDeselect={false}
         />
-        {errors.tag && (
-          <p className={errorMessageClasses}>{errors.tag.message}</p>
+        {errors.categoryId && (
+          <p className={errorMessageClasses}>{errors.categoryId.message}</p>
         )}
-        {!watchTag && !errors.tag && (
+        {!watchCategoryId && !errors.categoryId && (
           <p className={helperTextClasses}>
             Selecione uma categoria para o artigo
           </p>
@@ -114,6 +111,7 @@ export function ArticleForm({
           {...register('banner')}
           aria-invalid={errors.banner ? 'true' : 'false'}
           className={getInputClasses(!!errors.banner)}
+          disabled={isSubmitting}
         />
         {errors.banner && (
           <p className={errorMessageClasses}>{errors.banner.message}</p>
@@ -149,6 +147,7 @@ export function ArticleForm({
           {...register('content')}
           aria-invalid={errors.content ? 'true' : 'false'}
           className={getTextareaClasses(!!errors.content)}
+          disabled={isSubmitting}
         />
         {errors.content && (
           <p className={errorMessageClasses}>{errors.content.message}</p>
@@ -171,6 +170,7 @@ export function ArticleForm({
         <Button
           type="submit"
           className="bg-primary text-primary-foreground h-12 rounded-xl px-6 text-base font-semibold hover:opacity-90"
+          disabled={isSubmitting}
         >
           {submitButtonText}
         </Button>

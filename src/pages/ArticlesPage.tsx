@@ -1,37 +1,72 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArticleCard } from '@/components/ArticleCard';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { PaginatedList } from '@/components/PaginatedList';
 import { PageHeader, HeaderButton } from '@/components/PageHeader';
-import articlesData from '@/assets/articles.json';
+import { apiClient } from '@/api/client';
+import { clearUserSession } from '@/lib/auth';
+import type { Article, Category } from '@/types/api';
 
 const ARTICLES_PER_PAGE = 6;
 
 export function ArticlesPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
+    null
+  );
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [articlesResponse, categoriesResponse] = await Promise.all([
+          apiClient.get<Article[]>('/articles?page=1&limit=50'),
+          apiClient.get<Category[]>('/categories'),
+        ]);
+
+        setArticles(articlesResponse);
+        setCategories(categoriesResponse);
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError('Não foi possível carregar os artigos.');
+        toast.error('Erro ao carregar artigos.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const filteredArticles = useMemo(() => {
-    return articlesData.filter((article) => {
+    return articles.filter((article) => {
       const matchesSearch =
         searchTerm === '' ||
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        article.content.toLowerCase().includes(searchTerm.toLowerCase());
+        article.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory =
-        selectedCategory === null || article.tag === selectedCategory;
+        selectedCategoryId === null ||
+        article.categoryId === selectedCategoryId;
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchTerm, selectedCategory]);
+  }, [articles, searchTerm, selectedCategoryId]);
 
-  const handleCategoryChange = (category: string | null) => {
-    setSelectedCategory(category);
+  const handleCategoryChange = (categoryId: number | null) => {
+    setSelectedCategoryId(categoryId);
   };
 
   const handleSearchChange = (value: string) => {
@@ -39,6 +74,8 @@ export function ArticlesPage() {
   };
 
   const handleLogout = () => {
+    clearUserSession();
+    toast.success('Logout realizado.', { description: 'Até breve!' });
     navigate('/');
   };
 
@@ -79,7 +116,8 @@ export function ArticlesPage() {
             {/* Category Filters */}
             <div className="px-3 md:px-4">
               <CategoryBadges
-                selectedCategory={selectedCategory}
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
                 onCategoryChange={handleCategoryChange}
                 allowDeselect={true}
               />
@@ -96,15 +134,31 @@ export function ArticlesPage() {
             </div>
           </div>
 
+          {isLoading && (
+            <div className="px-4 py-8">
+              <p className="text-muted-foreground text-base">
+                Carregando artigos...
+              </p>
+            </div>
+          )}
+
+          {error && !isLoading && (
+            <div className="px-4 py-8">
+              <p className="text-destructive text-base">{error}</p>
+            </div>
+          )}
+
           {/* Articles List with Pagination */}
-          <PaginatedList
-            items={filteredArticles}
-            itemsPerPage={ARTICLES_PER_PAGE}
-            renderItem={(article) => (
-              <ArticleCard key={article.id} {...article} />
-            )}
-            emptyMessage="Nenhum artigo encontrado"
-          />
+          {!isLoading && (
+            <PaginatedList
+              items={filteredArticles}
+              itemsPerPage={ARTICLES_PER_PAGE}
+              renderItem={(article) => (
+                <ArticleCard key={article.id} article={article} />
+              )}
+              emptyMessage="Nenhum artigo encontrado"
+            />
+          )}
         </div>
       </main>
     </div>
