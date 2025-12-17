@@ -2,6 +2,13 @@
 
 Frontend React/TypeScript para o blog integrado ao backend NestJS.
 
+## Demo
+
+<video width="320" height="240" controls>
+  <source src="./src/assets/demo.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 ## Stack
 
 - React + TypeScript: produtividade, tipagem e ecossistema maduro.
