@@ -4,10 +4,7 @@ Frontend React/TypeScript para o blog integrado ao backend NestJS.
 
 ## Demo
 
-<video width="320" height="240" controls>
-  <source src="./src/assets/demo.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/7RCv6NP4y4g" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ## Stack
 
